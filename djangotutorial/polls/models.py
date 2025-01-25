@@ -64,6 +64,7 @@ class Parameter(models.Model):
     parameter_name = models.CharField(max_length=30, verbose_name="name of parameter")
 
     class Meta:
+        #this line should be deleded
         verbose_name = 'Product Parameters'
         ordering = ('parameter_name',)
 
@@ -115,6 +116,7 @@ class Order(models.Model):
         ordering = ('-order_dt',)
 
     def __str__(self):
+        #this line should be edited
         return f'{self.order_dt} {self.user}'
 
 
