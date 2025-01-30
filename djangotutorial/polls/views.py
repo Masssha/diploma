@@ -9,11 +9,17 @@ from .models import Product
 from .serializers import ProductSerializer
 
 
-class ProductView(ListAPIView):
+class PAPIView(APIView):
+    def get(self, request):
+        data = {'m': 'e'}
+        return Response(data)
+
+
+class ProductAPIView(ListAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
-    def get_product_by_id(self):
+    def get_product_by_id(self, request):
         id = request.data.get('id')
         data = Product.objects.all.get(id=id)
         ser = ProductSerializer(data)

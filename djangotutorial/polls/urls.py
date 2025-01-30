@@ -1,7 +1,15 @@
 from django.urls import path
 
-from . import views
+from .views import ProductAPIView, PAPIView
 
+app_name = 'polls'
 urlpatterns = [
-    path("", views.index, name="index"),
+    path('product/', ProductAPIView.as_view()),
+    path('p/', PAPIView.as_view())
 ]
+
+
+#
+# urlpatterns = [
+#     path("", views.index, name="index"),
+# ]
