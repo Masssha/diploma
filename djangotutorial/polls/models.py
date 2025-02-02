@@ -1,40 +1,108 @@
+from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_rest_passwordreset.tokens import get_token_generator
 
 
 STATE_CHOICES = (
-    ('basket', 'Статус корзины'),
-    ('new', 'Новый'),
-    ('confirmed', 'Подтвержден'),
-    ('assembled', 'Собран'),
-    ('sent', 'Отправлен'),
-    ('delivered', 'Доставлен'),
-    ('canceled', 'Отменен'),
+    ('basket', 'basket state'),
+    ('new', 'new'),
+    ('confirmed', 'confirmed'),
+    ('assembled', 'assembled'),
+    ('sent', 'sent'),
+    ('delivered', 'delivered'),
+    ('canceled', 'canceled'),
 )
+
+USER_TYPE_CHOICES = (
+    ('owner', 'owner'),
+    ('buyer', 'buyer'),
+
+)
+
+
+class UserManager(BaseUserManager):
+    use_in_migrations = True
+
+    def _create_user(self, email, password, **extra_fields):
+        if not email:
+            raise ValueError('The given email must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        return self._create_user(email, password, **extra_fields)
+
+    def create_superuser(self, email, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self._create_user(email, password, **extra_fields)
+
+
+class Person(AbstractUser):
+    username = None
+    email = models.EmailField(_('email address'), unique=True)
+    first_name = models.CharField(_('first name'), max_length=30, blank=False)
+    date_of_birth = models.DateField(verbose_name="Birthday",null=True)
+    company = models.CharField(max_length=40, blank=True)
+    position = models.CharField(max_length=40, blank=True)
+    # username_validator = UnicodeUsernameValidator()
+    # username = models.CharField(
+    #     _('username'),
+    #     max_length=150,
+    #     help_text=_('Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'),
+    #     validators=[username_validator],
+    #     error_messages={
+    #         'unique': _("A user with that username already exists."),
+    #     },
+    # )
+    is_active = models.BooleanField(
+        _('active'),
+        default=False,
+        help_text=_(
+            'Designates whether this user should be treated as active. '
+            'Unselect this instead of deleting accounts.'
+        ),
+    )
+    type = models.CharField(verbose_name='user type', default='buyer', choices=USER_TYPE_CHOICES, max_length=5)
+    REQUIRED_FIELDS = ["first_name",]
+    USERNAME_FIELD = 'email'
+    objects = UserManager()
+
+    def __str__(self):
+        return self.email
+
+    class Meta:
+        verbose_name = 'user'
+        verbose_name_plural = "users"
+        ordering = ('email',)
+
 
 class Shop(models.Model):
     name = models.CharField(max_length=30)
     url = models.URLField(null=True, blank=True)
     state = models.BooleanField(default=True)
+    user = models.OneToOneField(Person, blank=True, null=True, on_delete=models.CASCADE)
 
     class Meta:
         ordering = ('name',)
 
     def __str__(self):
         return self.name
-
-
-class Person(models.Model):
-    first_name = models.CharField(max_length=30, verbose_name="name")
-    last_name = models.CharField(max_length=30, verbose_name="surname")
-    email = models.EmailField(unique=True)
-
-    class Meta:
-        ordering = ('email',)
-
-    def __str__(self):
-        return f'{self.first_name} {self.last_name}'
 
 
 class Category(models.Model):
@@ -64,8 +132,6 @@ class Parameter(models.Model):
     parameter_name = models.CharField(max_length=30, verbose_name="name of parameter")
 
     class Meta:
-        #this line should be deleded
-        verbose_name = 'Product Parameters'
         ordering = ('parameter_name',)
 
     def __str__(self):
@@ -118,7 +184,6 @@ class Order(models.Model):
     def __str__(self):
         #this line should be edited
         return f'{self.order_dt} {self.user}'
-
 
 
 class OrderItem(models.Model):
