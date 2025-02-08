@@ -130,3 +130,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'polls.Person'
 LOGIN_REDIRECT_URL = '/1'
+
+ASGI_APPLICATION = 'mysite.asgi.application'

@@ -34,11 +34,11 @@ class ParameterSerializer(serializers.ModelSerializer):
 
 
 class ProductCreateSerializer(ProductSerializer):
-    product_cat = ProductSerializer(read_only=True)
+    product = ProductSerializer(read_only=True)
 
 
 class ProductInfoSerializer(serializers.ModelSerializer):
-    product_cat = ProductCreateSerializer(read_only=True, many=True)
+    category = ProductCreateSerializer(read_only=True, many=True)
 
     class Meta:
         model = ProductInfo
