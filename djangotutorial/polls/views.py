@@ -52,7 +52,8 @@ class ProductDetailAPIView(ListAPIView):
             raise Http404
 
     def get(self, request, id):
-        product = ProductInfo.objects.get(id=id).prefetch_related('information__product_info__product__category').annotate()
+        product = ProductInfo.objects.prefetch_related('product__category').get(id=id)
+        # product = ProductInfo.objects.get(id=id).prefetch_related('information__product_info__product__category').annotate()
         serializer = ProductInfoSerializer(product)
         return Response(serializer.data)
 

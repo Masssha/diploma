@@ -27,18 +27,18 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class ProductCatCreateSerializer(ProductSerializer):
-    product_cat = ProductSerializer(read_only=True)
-
-
 class ParameterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Parameter
         fields = "__all__"
 
 
+class ProductCreateSerializer(ProductSerializer):
+    product_cat = ProductSerializer(read_only=True)
+
+
 class ProductInfoSerializer(serializers.ModelSerializer):
-    product_cat = ProductCatCreateSerializer(read_only=True, many=True)
+    product_cat = ProductCreateSerializer(read_only=True, many=True)
 
     class Meta:
         model = ProductInfo
