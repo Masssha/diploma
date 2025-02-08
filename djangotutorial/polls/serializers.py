@@ -27,6 +27,10 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class ProductCatCreateSerializer(ProductSerializer):
+    product_cat = ProductSerializer(read_only=True)
+
+
 class ParameterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Parameter
@@ -34,6 +38,8 @@ class ParameterSerializer(serializers.ModelSerializer):
 
 
 class ProductInfoSerializer(serializers.ModelSerializer):
+    product_cat = ProductCatCreateSerializer(read_only=True, many=True)
+
     class Meta:
         model = ProductInfo
         fields = "__all__"
@@ -51,15 +57,21 @@ class ContactSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class OrderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Order
-        fields = "__all__"
-
-
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
+        fields = "__all__"
+
+
+class OrderItemCreateSerializer(OrderItemSerializer):
+    product_info = ProductInfoSerializer(read_only=True)
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    ordered_items = OrderItemCreateSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = Order
         fields = "__all__"
 
 

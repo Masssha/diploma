@@ -147,7 +147,7 @@ class ProductInfo(models.Model):
 
 
 class ProductParameter(models.Model):
-    product_info = models.ForeignKey(ProductInfo, on_delete=models.CASCADE)
+    product_info = models.ForeignKey(ProductInfo, related_name="product_parameter", on_delete=models.CASCADE)
     parameter = models.ForeignKey(Parameter, on_delete=models.CASCADE)
     parameter_value = models.CharField(max_length=100, verbose_name="parameter value")
 
@@ -187,7 +187,7 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-     order = models.ForeignKey(Order, on_delete=models.CASCADE)
+     order = models.ForeignKey(Order, related_name='ordered_items',on_delete=models.CASCADE)
      product = models.ForeignKey(Product, on_delete=models.CASCADE)
      quantity = models.PositiveIntegerField()
      shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
