@@ -16,16 +16,17 @@ from django.http import Http404
 from rest_framework import status
 from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
+from adrf.views import APIView as AsyncAPIView
 
 
 from .models import Product, Category, Shop, Order, ProductInfo, Contact, ConfirmEmailToken
 from .serializers import ProductSerializer, CategorySerializer, ShopSerializer, OrderSerializer, ProductInfoSerializer, \
-    ContactSerializer, PersonSerializer
+    ContactSerializer, PersonSerializer, OrderItemCreateSerializer
 
 
-class ProductsAPIView(ListAPIView):
-    queryset = ProductInfo.objects.all()
-    serializer_class = ProductInfoSerializer
+class ProductsAPIView(AsyncAPIView):
+    # queryset = ProductInfo.objects.all()
+    # serializer_class = ProductInfoSerializer
 
     def get(self, request):
         shop_id = request.query_params.get('shop_id')
@@ -136,11 +137,11 @@ class BasketView(ListAPIView):
     #         return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
 
-class PartnerOrders(APIView):
+class PartnerOrders(AsyncAPIView):
     """
         Класс для получения заказов поставщиками
     """
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
@@ -153,20 +154,28 @@ class PartnerOrders(APIView):
             'ordered_items__product_info__product_parameters__parameter').select_related('contact').annotate(
             total_sum=Sum(F('ordered_items__quantity') * F('ordered_items__product_info__price'))).distinct()
 
-        serializer = OrderSerializer(order, many=True)
-        return Response(serializer.data)
+        orders = [
+            OrderItemCreateSerializer(item).data
+            async for item in order
+        ]
+        return Response({'ordered_items': orders})
 
 
-class ContactView(APIView):
 
-    def get(self, request, *args, **kwargs):
+        #serializer = OrderSerializer(order, many=True)
+        #return Response(serializer.data)
+
+
+class ContactView(AsyncAPIView):
+
+    async def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
         contact = Contact.objects.filter(user_id=request.user.id)
         serializer = ContactSerializer(contact, many=True)
         return Response(serializer.data)
 
-    def post(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
@@ -225,16 +234,16 @@ class RegisterAccount(APIView):
 
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
-class ConfirmAccount(APIView):
-    def post(self, request, *args, **kwargs):
+class ConfirmAccount(AsyncAPIView):
+    async def post(self, request, *args, **kwargs):
         if {'email', 'token'}.issubset(request.data):
 
-            token = ConfirmEmailToken.objects.filter(user__email=request.data['email'],
-                                                     key=request.data['token']).first()
+            token = await ConfirmEmailToken.objects.filter(user__email=request.data['email'],
+                                                     key=request.data['token']).afirst()
             if token:
                 token.user.is_active = True
-                token.user.save()
-                token.delete()
+                await token.user.asave()
+                await token.adelete()
                 return JsonResponse({'Status': True})
             else:
                 return JsonResponse({'Status': False, 'Errors': 'Неправильно указан токен или email'})
